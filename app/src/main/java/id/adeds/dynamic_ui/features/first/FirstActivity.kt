@@ -1,10 +1,9 @@
 package id.adeds.dynamic_ui.features.first
 
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import id.adeds.dynamic_ui.R
 import id.adeds.dynamic_ui.util.MyResult
-import id.adeds.dynamic_ui.util.print
+import kotlinx.android.synthetic.main.activity_first.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class FirstActivity : AppCompatActivity(R.layout.activity_first) {
@@ -15,20 +14,20 @@ class FirstActivity : AppCompatActivity(R.layout.activity_first) {
         viewModel.observeData().observe(this){
             when(it){
                 is MyResult.Success -> {
-                    "${it.data}".print()
+                    resutlText.text = "${it.data}"
                 }
                 is MyResult.Error.RecoverableError -> {
-                    it.exception.message.print()
+                    resutlText.text = it.exception.message
                 }
                 is MyResult.Error.NonRecoverableError -> {
-                    it.exception.message.print()
+                    resutlText.text = it.exception.message
                 }
                 is MyResult.Loading -> {
-                    "loading".print()
+                    resutlText.text = "TUNGGU ..."
                 }
             }
         }
-        viewModel.getReposFromGitHub("user:adeds")
+        viewModel.getReposFromGitHub()
     }
 
 }

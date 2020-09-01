@@ -1,6 +1,6 @@
 package id.adeds.dynamic_ui.di
 
-import id.adeds.dynamic_ui.data.repo.GitHubRepo
+import id.adeds.dynamic_ui.data.repo.MyRepo
 import id.adeds.dynamic_ui.features.first.FirstViewModel
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -12,7 +12,7 @@ import org.koin.dsl.module
 object Injection {
     val baseModule = module {
         single { okHttpKtor }
-        single { GitHubRepo(get()) }
+        single { MyRepo(get()) }
         viewModel { FirstViewModel(get()) }
     }
 

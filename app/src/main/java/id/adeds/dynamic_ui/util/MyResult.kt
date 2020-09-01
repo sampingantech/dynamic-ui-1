@@ -5,7 +5,6 @@ sealed class MyResult<out T : Any> {
     data class Loading(val status: Boolean) : MyResult<Nothing>()
     sealed class Error(val exception: Exception) : MyResult<Nothing>() {
         class RecoverableError(exception: Exception) : Error(exception)
-        class NonRecoverableError(exception: Exception) :
-            Error(exception)
+        class NonRecoverableError(exception: Exception) : Error(exception)
     }
 }
