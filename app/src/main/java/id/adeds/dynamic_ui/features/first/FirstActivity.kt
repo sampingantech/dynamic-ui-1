@@ -34,6 +34,12 @@ class FirstActivity : AppCompatActivity(R.layout.activity_first), FormInterface,
 
     override fun onStart() {
         super.onStart()
+
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayShowHomeEnabled(true)
+        toolbar.setNavigationOnClickListener{ onBackPressed() }
+
         viewModel.observeData().observe(this) {
             when (it) {
                 is MyResult.Success -> {
