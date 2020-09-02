@@ -1,3 +1,20 @@
 <resources>
     <string name="app_name">dynamic-ui</string>
+    <string name="text_image">image</string>
+    <string name="text_can_not_empty"> %s tidak boleh kosong</string>
+    <string name="job_task_submission_terms_condition"><![CDATA[By submitting this document, i agree with all terms & condition]]></string>
+    <string name="text_send">KIRIM</string>
+    <string name="text_please_filled">Tolong diisi</string>
+    <string name="text_take_file">Select</string>
+    <string name="text_search">Cari</string>
+    <string name="text_select">Pilih</string>
+    <string name="text_choose_date">Pilih Tanggal</string>
+    <string name="text_choose_location">Pilih Lokasi</string>
+    <string name="molecule_address_city_title">Kota atau Kecamatan</string>
+    <string name="text_empty" />
+    <string name="molecule_address_postal_code_title">Kode Pos</string>
+    <string name="molecule_address_postal_address_title">Alamat</string>
+    <string name="dialog_file_photo_title">Choose File</string>
+    <string name="text_camera">Camera</string>
+    <string name="text_gallery">Gallery</string>
 </resources>
