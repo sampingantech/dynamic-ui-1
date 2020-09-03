@@ -43,6 +43,11 @@ class FirstViewModel(private val gitHubRepo: MyRepo) : BaseViewModel() {
     }
 
     fun postSubmission(id: Int?, submissionId: Int?, submission: MutableMap<String, Any?>) {
-        TODO("Not yet implemented")
+        Log.e("post", """
+            
+            id           : $id,
+            submissionId : $submissionId
+            submission   : $submission  
+        """.trimIndent())
     }
 }

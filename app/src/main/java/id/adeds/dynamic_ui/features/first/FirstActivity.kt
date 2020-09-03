@@ -5,6 +5,7 @@ import android.net.Uri
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import id.adeds.dynamic_ui.R
 import id.adeds.dynamic_ui.adapter.TaskSubmissionAdapter
 import id.adeds.dynamic_ui.data.model.CriteriaSubmission
@@ -27,7 +28,6 @@ class FirstActivity : AppCompatActivity(R.layout.activity_first), FormInterface,
     private var data = ArrayList<DynamicView>()
     private var criteriaSubmissions = ArrayList<CriteriaSubmission>()
     private var uploadFile = 0
-    private var projectId = 0
     private var submissionId: Int? = null
 
     private lateinit var question: Form
@@ -61,6 +61,10 @@ class FirstActivity : AppCompatActivity(R.layout.activity_first), FormInterface,
             }
         }
         questionAdapter = TaskSubmissionAdapter { widget, key ->  itemClicked(widget, key) }
+        recyclerFormSubmission.apply {
+            layoutManager = LinearLayoutManager(this@FirstActivity)
+            adapter = questionAdapter
+        }
         viewModel.getReposFromGitHub()
     }
 
