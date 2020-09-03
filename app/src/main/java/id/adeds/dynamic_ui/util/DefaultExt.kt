@@ -13,3 +13,9 @@ get() = when{
     this == null -> false
     else -> this
 }
+
+val String?.handled: String
+get() = when{
+    this == null -> ""
+    else -> this
+}
