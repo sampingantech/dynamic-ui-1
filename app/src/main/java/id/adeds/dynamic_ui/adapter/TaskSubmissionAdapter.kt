@@ -11,7 +11,7 @@ class TaskSubmissionAdapter(
     private val itemClickListener: (widget: String, key: String) -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    private var datas: ArrayList<DynamicView> = ArrayList()
+    private val datas = mutableListOf<DynamicView>()
 
     companion object {
         const val EDIT_TEXT = 1
@@ -25,8 +25,9 @@ class TaskSubmissionAdapter(
         const val ADDRESS = 9
     }
 
-    fun setQuestions(list: ArrayList<DynamicView>) {
-        datas = list
+    fun setQuestions(list: MutableList<DynamicView>) {
+        datas.clear()
+        datas.addAll(list)
         notifyDataSetChanged()
     }
 

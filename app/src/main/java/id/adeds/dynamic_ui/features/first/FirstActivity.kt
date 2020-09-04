@@ -1,10 +1,14 @@
 package id.adeds.dynamic_ui.features.first
 
 import android.app.Activity
+import android.content.Intent
 import android.net.Uri
+import android.os.Bundle
+import android.os.PersistableBundle
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import id.adeds.dynamic_ui.R
 import id.adeds.dynamic_ui.adapter.TaskSubmissionAdapter
@@ -15,30 +19,82 @@ import id.adeds.dynamic_ui.dialog.ChooseFilePhotoDialog
 import id.adeds.dynamic_ui.dialog.FullScreenDialog
 import id.adeds.dynamic_ui.util.*
 import kotlinx.android.synthetic.main.activity_first.*
+import kotlinx.coroutines.launch
+import kotlinx.serialization.*
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.fromJson
 import kotlinx.serialization.json.jsonObject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class FirstActivity : AppCompatActivity(R.layout.activity_first), FormInterface,
     FullScreenDialog.DialogListener, ViewOnDebounceListener {
+
+    companion object{
+        private const val SAVE_QUESTION = "saveQuestion"
+        private const val SAVE_STATE_VALUES = "saveStateValue"
+    }
+
     private val viewModel: FirstViewModel by viewModel()
     private lateinit var questionAdapter: TaskSubmissionAdapter
     private lateinit var chooseFilePhotoDialog: ChooseFilePhotoDialog
 
-    private var data = ArrayList<DynamicView>()
+    private var data = mutableListOf<DynamicView>()
     private var criteriaSubmissions = ArrayList<CriteriaSubmission>()
     private var uploadFile = 0
     private var submissionId: Int? = null
 
     private lateinit var question: Form
+    private var savedInstanceState: Bundle? = null
 
-    override fun onStart() {
-        super.onStart()
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setup()
+        if (savedInstanceState == null) viewModel.getReposFromGitHub()
+        else showSaveInstanceState(savedInstanceState)
+    }
 
+    private fun showSaveInstanceState(savedInstanceState: Bundle) {
+        this.savedInstanceState = savedInstanceState
+        try {
+            val data = savedInstanceState.getString(SAVE_QUESTION)
+            if (!data.isNullOrEmpty()) {
+                this.question = Json.decodeFromString(data)
+                setForm(question)
+            }
+        } catch (e: Exception) {
+            viewModel.getReposFromGitHub()
+        }
+    }
+
+    private fun updateDataFromSaveInstance() {
+        if (savedInstanceState != null) {
+            try {
+                val instanceState = savedInstanceState
+                val stateValues = instanceState?.getString(SAVE_STATE_VALUES)?:""
+                val type: java.lang.reflect.Type = object : HashMap<String, Any>() {}.javaClass.genericSuperclass
+                val serial = serializer(type) as KSerializer<HashMap<String, Any>>
+
+                val test: Map<String, Any> = Json.decodeFromString(serial, stateValues)
+                data.forEach {
+                    it.value = test[it.componentName]
+                    it.preview = instanceState?.get(it.componentName)
+                }
+            } catch (e: Exception) {
+            }
+        }
+    }
+
+    private fun setup() {
+        flipper.displayedChild = 1
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowHomeEnabled(true)
-        toolbar.setNavigationOnClickListener{ onBackPressed() }
+        toolbar.setNavigationOnClickListener { onBackPressed() }
+        buttonSubmit.debouncedListener(this)
+        checkBox.setOnCheckedChangeListener { _, isChecked -> buttonSubmit.isEnabled = isChecked }
+
+        setupForm()
 
         viewModel.observeData().observe(this) {
             when (it) {
@@ -60,12 +116,11 @@ class FirstActivity : AppCompatActivity(R.layout.activity_first), FormInterface,
                 }
             }
         }
-        questionAdapter = TaskSubmissionAdapter { widget, key ->  itemClicked(widget, key) }
+        questionAdapter = TaskSubmissionAdapter { widget, key -> itemClicked(widget, key) }
         recyclerFormSubmission.apply {
             layoutManager = LinearLayoutManager(this@FirstActivity)
             adapter = questionAdapter
         }
-        viewModel.getReposFromGitHub()
     }
 
     private fun itemClicked(widget: String, key: String) {
@@ -84,13 +139,20 @@ class FirstActivity : AppCompatActivity(R.layout.activity_first), FormInterface,
     }
 
     private fun showViewSubmission() {
+        updateDataFromSaveInstance()
         nestedScrollView.visible = true
         questionAdapter.setQuestions(this.data)
     }
 
-    private fun createCriteriaSubmissions(data: ArrayList<DynamicView>): List<CriteriaSubmission> {
+    private fun createCriteriaSubmissions(data: MutableList<DynamicView>): List<CriteriaSubmission> {
         return data.filter { it.uiSchemaRule.uiHelp != null }
-            .map { CriteriaSubmission(it.jsonSchema.title, it.uiSchemaRule.uiHelp, it.uiSchemaRule.uiHelpImage) }
+            .map {
+                CriteriaSubmission(
+                    it.jsonSchema.title,
+                    it.uiSchemaRule.uiHelp,
+                    it.uiSchemaRule.uiHelpImage
+                )
+            }
     }
 
     private fun createDynamicView(data: Form): ArrayList<DynamicView> {
@@ -100,8 +162,11 @@ class FirstActivity : AppCompatActivity(R.layout.activity_first), FormInterface,
         val uiSchema = data.uiSchema?.let { Converts.convertMapToJsonObject(it) }
         properties?.forEach { entry ->
             val jsonRule = provideJsonSchema(entry.value.jsonObject)
-            val uiSchemaRule = provideUiSchema(uiSchema?.get(entry.key)?.jsonObject?: JsonObject(
-                mapOf()))
+            val uiSchemaRule = provideUiSchema(
+                uiSchema?.get(entry.key)?.jsonObject ?: JsonObject(
+                    mapOf()
+                )
+            )
             val isRequired = data.questionSchema.required?.any { it == entry.key }
             dynamicViews.add(
                 DynamicView(
@@ -125,9 +190,9 @@ class FirstActivity : AppCompatActivity(R.layout.activity_first), FormInterface,
 
     private fun onFileSelected(key: String, uri: Uri?) {
         data.find { it.componentName == key }?.let {
-            val base64 = if (uri != null) viewModel.convertUriToBase64(this, uri) else null
+            val base64 = if (uri != null) viewModel.convertUriToBase64(this@FirstActivity, uri) else null
             if (base64 == null)
-                Toast.makeText(this, "File tidak dapat di proses", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@FirstActivity, "File tidak dapat di proses", Toast.LENGTH_SHORT).show()
             else {
                 it.value = uri
                 it.preview = uri
@@ -156,6 +221,7 @@ class FirstActivity : AppCompatActivity(R.layout.activity_first), FormInterface,
         val isError = data.any { it.isError }
         if (isError) {
             questionAdapter.refreshAdapter()
+            Toast.makeText(this, "error", Toast.LENGTH_SHORT).show()
         } else {
             val files = getDataTypeFile()
             uploadFile = files.size
@@ -164,7 +230,7 @@ class FirstActivity : AppCompatActivity(R.layout.activity_first), FormInterface,
                     it.value = viewModel.convertUriToBase64(this, it.value as Uri)
                 }
             }
-            
+
             postSubmissionData()
         }
     }
@@ -196,6 +262,33 @@ class FirstActivity : AppCompatActivity(R.layout.activity_first), FormInterface,
             }
         }
         viewModel.postSubmission(question.id, submissionId, submission)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        chooseFilePhotoDialog.onActivityResult(requestCode, resultCode, data)
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        chooseFilePhotoDialog.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        val mapValues  = mutableMapOf<String, Any>()
+        data.forEach {
+            if (it.value != null) mapValues[it.componentName] = it.value.toString()
+            if (it.preview != null) outState.putString(it.componentName, it.preview.toString())
+        }
+        val question = Json.encodeToString(question)
+        val jsonMapValues = mapValues.toString()
+        outState.putString(SAVE_QUESTION, question)
+        outState.putString(SAVE_STATE_VALUES, jsonMapValues)
     }
 
 }
