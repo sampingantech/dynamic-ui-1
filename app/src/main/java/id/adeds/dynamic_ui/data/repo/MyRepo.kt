@@ -1,6 +1,6 @@
 package id.adeds.dynamic_ui.data.repo
 
-import id.adeds.dynamic_ui.data.model.Scheme
+import id.adeds.dynamic_ui.data.model.Form
 import id.adeds.dynamic_ui.util.MyResult
 import id.adeds.dynamic_ui.util.isValid
 import io.ktor.client.*
@@ -11,12 +11,12 @@ import io.ktor.util.*
 class MyRepo(private val client: HttpClient) {
 
     @KtorExperimentalAPI
-    suspend fun getRepositoriesKtor(): MyResult<Scheme> {
+    suspend fun getRepositoriesKtor(): MyResult<Form> {
         try {
             val requestUrl = "https://private-788f7-adedyas1.apiary-mock.com/json-scheme-2"
 
             val response =
-                client.request<Scheme>(requestUrl) {
+                client.request<Form>(requestUrl) {
                     method = HttpMethod.Get
                     headers {
                         append("My-Custom-Header", "HeaderValue")
